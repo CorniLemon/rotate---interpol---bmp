@@ -218,8 +218,8 @@ public:
         for (int y = 0; y < Hout; ++y) {
             for (int x = 0; x < Wout; ++x) {
 
-                Y1 = (x - dx) * sinA + (y - dy) * cosA;
-                X1 = (x - dx) * cosA - (y - dy) * sinA;
+                Y1 = (x - dx) * sinA + (y - dy) * cosA + 0.5;
+                X1 = (x - dx) * cosA - (y - dy) * sinA + 0.5;
 
                 if (X1 >= 0 && X1 < Win - 1 && Y1 >= 0 && Y1 < Hin - 1 || X1 - Win == 0 || Y1 - Hin == 0) {//---------------------------------
                     lineOut[x] = matrOrigin.getAve2Per(Y1, X1);
