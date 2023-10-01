@@ -8,13 +8,13 @@ using namespace std;
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-static const double angle = -3 * M_PI / 4;//в радианах
+static const double angle = 0 * M_PI / 4;//в радианах
 
 static const double sinA = sin(angle);
 static const double cosA = cos(angle);
 
-static const char sIn[] = "in.bmp";
-static const char sOut[] = "out_-3Pid4Lans111.bmp";
+static const char sIn[] = "in3.bmp";
+static const char sOut[] = "out3_0Pid4Lans111.bmp";
 
 uint32_t trash = 0;//для заполнения padding
 const int sampling = 10;//допустим 10
@@ -77,10 +77,15 @@ class MATR {
     size_t Hin;
     size_t Win;
     size_t del;
+    size_t offset;
+    size_t  Worig;
+    size_t padding;
+
 
 public:
 
-    MATR(size_t Hin, size_t Win) : Hin(Hin), Win(Win)
+    MATR(size_t Hin, size_t Win, size_t offset, size_t  Worig, size_t padding) 
+        : Hin(Hin), Win(Win), offset(offset), Worig(Worig), padding(padding)
     {
         del = Hin + 2 * extend;
         matrIn = new RGBTRIPLE * [del];
@@ -100,177 +105,208 @@ public:
         return matrIn[i][j];
     }
 
-    void FillAll(FILE* f, int padding) {
-
-        for (size_t i = extend; i < Hin + extend; ++i) {
-            fread(matrIn[i] + extend, Win * 3, 1, f);
-            fseek(f, padding, SEEK_CUR);
-            for (size_t j = 0; j < extend; ++j) {//расширение по бокам
-                matrIn[i][j] = matrIn[i][2 * extend - 1 - j];
-                matrIn[i][Win + 2 * extend - 1 - j] = matrIn[i][Win + j];
-            }
-
+    void ReadFrame(FILE* f, int X, int Y, int startx, int starty, int h, int w) 
+        //X,Y -откуда начинать читать; start..- куда начинать читать; h,w - а сколько вообще читать
+    {
+        size_t seek = offset + Y * (Worig * sizeof(RGBTRIPLE) + padding) + X * sizeof(RGBTRIPLE);
+        fseek(f, seek, SEEK_SET);
+        seek = (Worig + w) * sizeof(RGBTRIPLE) + padding;
+        for (int y = 0; y < h; ++y) {
+            fread(matrIn[starty+y] + startx, w * 3, 1, f);
+            fseek(f, seek, SEEK_SET);
         }
 
-        for (size_t i = 0; i < extend; ++i) {//расширение вверх и вниз
-            memcpy(matrIn[i], matrIn[2 * extend - 1 - i], (Win + 2 * extend) * sizeof(RGBTRIPLE));
-            memcpy(matrIn[Hin + 2 * extend - 1 - i], matrIn[Hin + i], (Win + 2 * extend) * sizeof(RGBTRIPLE));
+        for (int y = 0; y < Hin; ++y) {
+            for (int i = 0; i < startx; ++i) {//расширение в лево <--
+                matrIn[y][i] = matrIn[y][startx];
+            }
+            for (int i = startx+w; i < Win; ++i) {//расширение в право -->
+                matrIn[y][i] = matrIn[y][startx+w-1];
+            }
         }
-    }
-
-    RGBTRIPLE getBilineWiki(double Y1, double X1) {
-        PIX Ave;
-        Ave.clc();
-        RGBTRIPLE Out;
-
-        size_t X0, Y0;
-        X0 = X1;//округление вниз//целая часть
-        Y0 = Y1;
-
-        double x = X1 - X0;
-        double y = Y1 - Y0;
-
-        x = 1 - x;//они реально инвертированы
-        y = 1 - y;
-        
-        double b[4][4] = {
-            {
-                //5,
-                (1 / 36.)* x* y* (x - 1)* (x - 2)* (y - 1)* (y - 2),
-                (-1 / 12.)* x* (x - 1)* (x - 2)* (y - 1)* (y - 2)* (y + 1),
-                (1 / 12.)* x* y* (x - 1)* (x - 2)* (y + 1)* (y - 2),
-                (-1 / 36.)* x* y* (x - 1)* (x - 2)* (y - 1)* (y + 1)
-            },
-            {
-                (-1 / 12.)* y* (x - 1)* (x - 2)* (x + 1)* (y - 1)* (y - 2),
-                (1 / 4.)* (x - 1)* (x - 2)* (x + 1)* (y - 1)* (y - 2)* (y + 1),
-                (-1 / 4.)* y* (x - 1)* (x - 2)* (x + 1)* (y + 1)* (y - 2),
-                (1 / 12.)* y* (x - 1)* (x - 2)* (x + 1)* (y - 1)* (y + 1)
-            },
-            {
-                (1 / 12.)* x* y* (x + 1)* (x - 2)* (y - 1)* (y - 2),
-                (-1 / 4.)* x* (x + 1)* (x - 2)* (y - 1)* (y - 2)* (y + 1),
-                (1 / 4.)* x* y* (x + 1)* (x - 2)* (y + 1)* (y - 2),
-                (-1 / 12.)* x* y* (x + 1)* (x - 2)* (y - 1)* (y + 1)
-            },
-            {
-                (-1 / 36.)* x* y* (x - 1)* (x + 1)* (y - 1)* (y - 2),
-                (1 / 12.)* x* (x - 1)* (x + 1)* (y - 1)* (y - 2)* (y + 1),
-                (-1 / 12.)* x* y* (x - 1)* (x + 1)* (y + 1)* (y - 2),
-                (1 / 36.)* x* y* (x - 1)* (x + 1)* (y - 1)* (y + 1)
+        for (int x = 0; x < Hin; ++x) {
+            for (int i = 0; i < starty; ++i) {//расширение в низ V
+                matrIn[x][i] = matrIn[x][startx];
             }
-        };
-
-        //b[0] = 1 / 4 * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) * (y + 1);
-        //b[1] = -1 / 4 * x * (x + 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1);
-        //b[2] = -1 / 4 * y * (x - 1) * (x - 2) * (x + 1) * (y + 1) * (y - 2);
-        //b[3] = 1 / 4 * x * y * (x + 1) * (x - 2) * (y + 1) * (y - 2);
-        //b[4] = -1 / 12 * x * (x - 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1);
-        //b[5] = -1 / 12 * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2);
-        //b[6] = 1 / 12 * x * y * (x - 1) * (x - 2) * (y + 1) * (y - 2);
-        //b[7] = 1 / 12 * x * y * (x + 1) * (x - 2) * (y - 1) * (y - 2);
-        //b[8] = 1 / 12 * x * (x - 1) * (x + 1) * (y - 1) * (y - 2) * (y + 1);
-        //b[9] = 1 / 12 * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y + 1);
-        //b[10] = 1 / 36 * x * y * (x - 1) * (x - 2) * (y - 1) * (y - 2);
-        //b[11] = -1 / 12 * x * y * (x - 1) * (x + 1) * (y + 1) * (y - 2);
-        //b[12] = -1 / 12 * x * y * (x + 1) * (x - 2) * (y - 1) * (y + 1);
-        //b[13] = -1 / 36 * x * y * (x - 1) * (x + 1) * (y - 1) * (y - 2);
-        //b[14] = -1 / 36 * x * y * (x - 1) * (x - 2) * (y - 1) * (y + 1);
-        //b[15] = 1 / 36 * x * y * (x - 1) * (x + 1) * (y - 1) * (y + 1);
-
-        Ave.clc();
-
-        for (int i = 0; i < 4; ++i)
-            for (int j = 0; j < 4; ++j)
-            {
-                Ave.rgbtBlue += matrIn[Y0 + i - 1][X0 + j - 1].rgbtBlue * b[i][j];
-                Ave.rgbtGreen += matrIn[Y0 + i - 1][X0 + j - 1].rgbtGreen * b[i][j];
-                Ave.rgbtRed += matrIn[Y0 + i - 1][X0 + j - 1].rgbtRed * b[i][j];
-            }
-
-        Ave.norm();
-        Out.rgbtBlue = Ave.rgbtBlue;
-        Out.rgbtGreen = Ave.rgbtGreen;
-        Out.rgbtRed = Ave.rgbtRed;
-
-        return Out;
-    }
-
-    RGBTRIPLE getLans(double Y1, double X1) {
-        PIX Ave;
-        Ave.clc();
-        RGBTRIPLE Out;
-
-        size_t X0, Y0;
-        X0 = X1;//округление вниз//целая часть
-        Y0 = Y1;
-
-        double x = X1 - X0;
-        double y = Y1 - Y0;
-
-        //double b[4][4] = {
-        //    {
-        //        //5,
-        //        (1 / 36.) * x * y * (x - 1) * (x - 2) * (y - 1) * (y - 2),
-        //        (-1 / 12.) * x * (x - 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1),
-        //        (1 / 12.) * x * y * (x - 1) * (x - 2) * (y + 1) * (y - 2),
-        //        (-1 / 36.) * x * y * (x - 1) * (x - 2) * (y - 1) * (y + 1)
-        //    },
-        //    {
-        //        (-1 / 12.) * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2),
-        //        (1 / 4.) * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) * (y + 1),
-        //        (-1 / 4.) * y * (x - 1) * (x - 2) * (x + 1) * (y + 1) * (y - 2),
-        //        (1 / 12.) * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y + 1)
-        //    },
-        //    {
-        //        (1 / 12.) * x * y * (x + 1) * (x - 2) * (y - 1) * (y - 2),
-        //        (-1 / 4.) * x * (x + 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1),
-        //        (1 / 4.) * x * y * (x + 1) * (x - 2) * (y + 1) * (y - 2),
-        //        (-1 / 12.) * x * y * (x + 1) * (x - 2) * (y - 1) * (y + 1)
-        //    },
-        //    {
-        //        (-1 / 36.) * x * y * (x - 1) * (x + 1) * (y - 1) * (y - 2),
-        //        (1 / 12.) * x * (x - 1) * (x + 1) * (y - 1) * (y - 2) * (y + 1),
-        //        (-1 / 12.) * x * y * (x - 1) * (x + 1) * (y + 1) * (y - 2),
-        //        (1 / 36.) * x * y * (x - 1) * (x + 1) * (y - 1) * (y + 1)
-        //    }
-        //};
-
-        int a = 3;
-
-        double ki = 1;
-        double kj = 1;
-
-        for (int i = -2; i < 4; ++i)
-        {
-            if (x + i == 0)
-                ki = 1;
-            else
-                ki = a * sin(M_PI * (x - i)) * sin(M_PI * (x - i) / a) / (M_PI * M_PI * (x - i) * (x - i));
-
-            //cout << "\n\nki = " << ki;
-            for (int j = -2; j < 4; ++j)
-            {
-                if (y + j == 0)
-                    kj = 1;
-                else
-                    kj= a * sin(M_PI * (y - j)) * sin(M_PI * (y - j) / a) / (M_PI * M_PI * (y - j) * (y - j));
-
-                Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
-                Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
-                Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
+            for (int i = starty + h; i < Hin; ++i) {//расширение в верх ^
+                matrIn[x][i] = matrIn[x][starty + h - 1];
             }
         }
 
-        Ave.norm();
-        Out.rgbtBlue = Ave.rgbtBlue;
-        Out.rgbtGreen = Ave.rgbtGreen;
-        Out.rgbtRed = Ave.rgbtRed;
-
-        return Out;
     }
 
-    RGBTRIPLE getLansGlob(double Y1, double X1) {
+    //void FillAll(FILE* f, int padding) {//...
+    
+    //    for (size_t i = extend; i < Hin + extend; ++i) {
+    //        fread(matrIn[i] + extend, Win * 3, 1, f);
+    //        fseek(f, padding, SEEK_CUR);
+    //        for (size_t j = 0; j < extend; ++j) {//расширение по бокам
+    //            matrIn[i][j] = matrIn[i][2 * extend - 1 - j];
+    //            matrIn[i][Win + 2 * extend - 1 - j] = matrIn[i][Win + j];
+    //        }
+    //    }
+    // 
+    //    for (size_t i = 0; i < extend; ++i) {//расширение вверх и вниз
+    //        memcpy(matrIn[i], matrIn[2 * extend - 1 - i], (Win + 2 * extend) * sizeof(RGBTRIPLE));
+    //        memcpy(matrIn[Hin + 2 * extend - 1 - i], matrIn[Hin + i], (Win + 2 * extend) * sizeof(RGBTRIPLE));
+    //    }
+    //}
+
+    //RGBTRIPLE getBilineWiki(double Y1, double X1) {//...
+   
+    //    PIX Ave;
+    //    Ave.clc();
+    //    RGBTRIPLE Out;
+    //
+    //    size_t X0, Y0;
+    //    X0 = X1;//округление вниз//целая часть
+    //    Y0 = Y1;
+    //
+    //    double x = X1 - X0;
+    //    double y = Y1 - Y0;
+    //
+    //    x = 1 - x;//они реально инвертированы
+    //    y = 1 - y;
+    //    
+    //    double b[4][4] = {
+    //        {
+    //            //5,
+    //            (1 / 36.)* x* y* (x - 1)* (x - 2)* (y - 1)* (y - 2),
+    //            (-1 / 12.)* x* (x - 1)* (x - 2)* (y - 1)* (y - 2)* (y + 1),
+    //            (1 / 12.)* x* y* (x - 1)* (x - 2)* (y + 1)* (y - 2),
+    //            (-1 / 36.)* x* y* (x - 1)* (x - 2)* (y - 1)* (y + 1)
+    //        },
+    //        {
+    //            (-1 / 12.)* y* (x - 1)* (x - 2)* (x + 1)* (y - 1)* (y - 2),
+    //            (1 / 4.)* (x - 1)* (x - 2)* (x + 1)* (y - 1)* (y - 2)* (y + 1),
+    //            (-1 / 4.)* y* (x - 1)* (x - 2)* (x + 1)* (y + 1)* (y - 2),
+    //            (1 / 12.)* y* (x - 1)* (x - 2)* (x + 1)* (y - 1)* (y + 1)
+    //        },
+    //        {
+    //            (1 / 12.)* x* y* (x + 1)* (x - 2)* (y - 1)* (y - 2),
+    //            (-1 / 4.)* x* (x + 1)* (x - 2)* (y - 1)* (y - 2)* (y + 1),
+    //            (1 / 4.)* x* y* (x + 1)* (x - 2)* (y + 1)* (y - 2),
+    //            (-1 / 12.)* x* y* (x + 1)* (x - 2)* (y - 1)* (y + 1)
+    //        },
+    //        {
+    //            (-1 / 36.)* x* y* (x - 1)* (x + 1)* (y - 1)* (y - 2),
+    //            (1 / 12.)* x* (x - 1)* (x + 1)* (y - 1)* (y - 2)* (y + 1),
+    //            (-1 / 12.)* x* y* (x - 1)* (x + 1)* (y + 1)* (y - 2),
+    //            (1 / 36.)* x* y* (x - 1)* (x + 1)* (y - 1)* (y + 1)
+    //        }
+    //    };
+    //
+    //    //b[0] = 1 / 4 * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) * (y + 1);
+    //    //b[1] = -1 / 4 * x * (x + 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1);
+    //    //b[2] = -1 / 4 * y * (x - 1) * (x - 2) * (x + 1) * (y + 1) * (y - 2);
+    //    //b[3] = 1 / 4 * x * y * (x + 1) * (x - 2) * (y + 1) * (y - 2);
+    //    //b[4] = -1 / 12 * x * (x - 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1);
+    //    //b[5] = -1 / 12 * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2);
+    //    //b[6] = 1 / 12 * x * y * (x - 1) * (x - 2) * (y + 1) * (y - 2);
+    //    //b[7] = 1 / 12 * x * y * (x + 1) * (x - 2) * (y - 1) * (y - 2);
+    //    //b[8] = 1 / 12 * x * (x - 1) * (x + 1) * (y - 1) * (y - 2) * (y + 1);
+    //    //b[9] = 1 / 12 * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y + 1);
+    //    //b[10] = 1 / 36 * x * y * (x - 1) * (x - 2) * (y - 1) * (y - 2);
+    //    //b[11] = -1 / 12 * x * y * (x - 1) * (x + 1) * (y + 1) * (y - 2);
+    //    //b[12] = -1 / 12 * x * y * (x + 1) * (x - 2) * (y - 1) * (y + 1);
+    //    //b[13] = -1 / 36 * x * y * (x - 1) * (x + 1) * (y - 1) * (y - 2);
+    //    //b[14] = -1 / 36 * x * y * (x - 1) * (x - 2) * (y - 1) * (y + 1);
+    //    //b[15] = 1 / 36 * x * y * (x - 1) * (x + 1) * (y - 1) * (y + 1);
+    //
+    //    Ave.clc();
+    //
+    //    for (int i = 0; i < 4; ++i)
+    //        for (int j = 0; j < 4; ++j)
+    //        {
+    //            Ave.rgbtBlue += matrIn[Y0 + i - 1][X0 + j - 1].rgbtBlue * b[i][j];
+    //            Ave.rgbtGreen += matrIn[Y0 + i - 1][X0 + j - 1].rgbtGreen * b[i][j];
+    //            Ave.rgbtRed += matrIn[Y0 + i - 1][X0 + j - 1].rgbtRed * b[i][j];
+    //        }
+    //
+    //    Ave.norm();
+    //    Out.rgbtBlue = Ave.rgbtBlue;
+    //    Out.rgbtGreen = Ave.rgbtGreen;
+    //    Out.rgbtRed = Ave.rgbtRed;
+    //
+    //    return Out;
+    //}
+
+    //RGBTRIPLE getLans(double Y1, double X1) {//...
+    
+    //    PIX Ave;
+    //    Ave.clc();
+    //    RGBTRIPLE Out;
+    //
+    //    size_t X0, Y0;
+    //    X0 = X1;//округление вниз//целая часть
+    //    Y0 = Y1;
+    //
+    //    double x = X1 - X0;
+    //    double y = Y1 - Y0;
+    //
+    //    //double b[4][4] = {
+    //    //    {
+    //    //        //5,
+    //    //        (1 / 36.) * x * y * (x - 1) * (x - 2) * (y - 1) * (y - 2),
+    //    //        (-1 / 12.) * x * (x - 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1),
+    //    //        (1 / 12.) * x * y * (x - 1) * (x - 2) * (y + 1) * (y - 2),
+    //    //        (-1 / 36.) * x * y * (x - 1) * (x - 2) * (y - 1) * (y + 1)
+    //    //    },
+    //    //    {
+    //    //        (-1 / 12.) * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2),
+    //    //        (1 / 4.) * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) * (y + 1),
+    //    //        (-1 / 4.) * y * (x - 1) * (x - 2) * (x + 1) * (y + 1) * (y - 2),
+    //    //        (1 / 12.) * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y + 1)
+    //    //    },
+    //    //    {
+    //    //        (1 / 12.) * x * y * (x + 1) * (x - 2) * (y - 1) * (y - 2),
+    //    //        (-1 / 4.) * x * (x + 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1),
+    //    //        (1 / 4.) * x * y * (x + 1) * (x - 2) * (y + 1) * (y - 2),
+    //    //        (-1 / 12.) * x * y * (x + 1) * (x - 2) * (y - 1) * (y + 1)
+    //    //    },
+    //    //    {
+    //    //        (-1 / 36.) * x * y * (x - 1) * (x + 1) * (y - 1) * (y - 2),
+    //    //        (1 / 12.) * x * (x - 1) * (x + 1) * (y - 1) * (y - 2) * (y + 1),
+    //    //        (-1 / 12.) * x * y * (x - 1) * (x + 1) * (y + 1) * (y - 2),
+    //    //        (1 / 36.) * x * y * (x - 1) * (x + 1) * (y - 1) * (y + 1)
+    //    //    }
+    //    //};
+    //
+    //    int a = 3;
+    //
+    //    double ki = 1;
+    //    double kj = 1;
+    //
+    //    for (int i = -2; i < 4; ++i)
+    //    {
+    //        if (x + i == 0)
+    //            ki = 1;
+    //        else
+    //            ki = a * sin(M_PI * (x - i)) * sin(M_PI * (x - i) / a) / (M_PI * M_PI * (x - i) * (x - i));
+    //
+    //        //cout << "\n\nki = " << ki;
+    //        for (int j = -2; j < 4; ++j)
+    //        {
+    //            if (y + j == 0)
+    //                kj = 1;
+    //            else
+    //                kj= a * sin(M_PI * (y - j)) * sin(M_PI * (y - j) / a) / (M_PI * M_PI * (y - j) * (y - j));
+    //
+    //            Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
+    //            Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
+    //            Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
+    //        }
+    //    }
+    //
+    //    Ave.norm();
+    //    Out.rgbtBlue = Ave.rgbtBlue;
+    //    Out.rgbtGreen = Ave.rgbtGreen;
+    //    Out.rgbtRed = Ave.rgbtRed;
+    //
+    //    return Out;
+    //}
+
+    RGBTRIPLE getLansGlobFrame(double Y1, double X1) {
         PIX Ave;
         Ave.clc();
         RGBTRIPLE Out;
@@ -297,9 +333,7 @@ public:
             kid = (x - i) * 1000 + 3000 - kim;
 
             ki = LansoshConst[kim] * (1 - kid) + LansoshConst[kim + 1] * (kid);
- //           ki = Lansosh[];//x-i*1000+3000
 
-            //cout << "\n\nki = " << ki;
             for (int j = -2; j < 4; ++j)
             {
                 kjm = (y - j) * 1000 + 3000;
@@ -307,11 +341,6 @@ public:
 
                 kj = LansoshConst[kjm] * (1 - kjd) + LansoshConst[kjm + 1] * (kjd);
 
-                /*if (y + j == 0)
-                    kj = 1;
-                else
-                    kj = a * sin(M_PI * (y - j)) * sin(M_PI * (y - j) / a) / (M_PI * M_PI * (y - j) * (y - j));*/
-
                 Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
                 Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
                 Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
@@ -326,101 +355,147 @@ public:
         return Out;
     }
 
-    RGBTRIPLE getLansProg(double Y1, double X1, double LansoshProg[]) {
-        PIX Ave;
-        Ave.clc();
-        RGBTRIPLE Out;
+    //RGBTRIPLE getLansGlob(double Y1, double X1) {//,,,
 
-        size_t X0, Y0;
-        X0 = X1;//округление вниз//целая часть
-        Y0 = Y1;
+    //    PIX Ave;
+    //    Ave.clc();
+    //    RGBTRIPLE Out;
+    //
+    //    size_t X0, Y0;
+    //    X0 = X1;//округление вниз//целая часть
+    //    Y0 = Y1;
+    //
+    //    double x = X1 - X0;
+    //    double y = Y1 - Y0;
+    //
+    //    int a = 3;
+    //
+    //    double ki = 1;
+    //    double kj = 1;
+    //    int kim;
+    //    int kjm;
+    //    double kid;
+    //    double kjd;
+    //
+    //    for (int i = -2; i < 4; ++i)
+    //    {
+    //        kim = (x - i) * 1000 + 3000;
+    //        kid = (x - i) * 1000 + 3000 - kim;
+    //
+    //        ki = LansoshConst[kim] * (1 - kid) + LansoshConst[kim + 1] * (kid);
+    //
+    //        for (int j = -2; j < 4; ++j)
+    //        {
+    //            kjm = (y - j) * 1000 + 3000;
+    //            kjd = (y - j) * 1000 + 3000 - kjm;
+    //
+    //            kj = LansoshConst[kjm] * (1 - kjd) + LansoshConst[kjm + 1] * (kjd);
+    //
+    //            Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
+    //            Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
+    //            Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
+    //        }
+    //    }
+    //
+    //    Ave.norm();
+    //    Out.rgbtBlue = Ave.rgbtBlue;
+    //    Out.rgbtGreen = Ave.rgbtGreen;
+    //    Out.rgbtRed = Ave.rgbtRed;
+    //
+    //    return Out;
+    //}
 
-        double x = X1 - X0;
-        double y = Y1 - Y0;
+    //RGBTRIPLE getLansProg(double Y1, double X1, double LansoshProg[]) {//...
+    
+    //    PIX Ave;
+    //    Ave.clc();
+    //    RGBTRIPLE Out;
+    //
+    //    size_t X0, Y0;
+    //    X0 = X1;//округление вниз//целая часть
+    //    Y0 = Y1;
+    //
+    //    double x = X1 - X0;
+    //    double y = Y1 - Y0;
+    //
+    //    int a = 3;
+    //
+    //    double ki = 1;
+    //    double kj = 1;
+    //    int kim;
+    //    int kjm;
+    //    double kid;
+    //    double kjd;
+    //
+    //    for (int i = -2; i < 4; ++i)
+    //    {
+    //        kim = (x - i) * 1000 + 3000;
+    //        kid = (x - i) * 1000 + 3000 - kim;
+    //
+    //        ki = LansoshProg[kim] * (1 - kid) + LansoshProg[kim + 1] * (kid);
+    //
+    //        for (int j = -2; j < 4; ++j)
+    //        {
+    //            kjm = (y - j) * 1000 + 3000;
+    //            kjd = (y - j) * 1000 + 3000 - kjm;
+    //
+    //            kj = LansoshProg[kjm] * (1 - kjd) + LansoshProg[kjm + 1] * (kjd);
+    //
+    //            Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
+    //            Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
+    //            Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
+    //        }
+    //    }
+    //
+    //    Ave.norm();
+    //    Out.rgbtBlue = Ave.rgbtBlue;
+    //    Out.rgbtGreen = Ave.rgbtGreen;
+    //    Out.rgbtRed = Ave.rgbtRed;
+    //
+    //    return Out;
+    //}
 
-        int a = 3;
+    //RGBTRIPLE getAve2Per(double Y1, double X1) {//...
+    
+    //    PIX Ave;
+    //    Ave.clc();
+    //    size_t x, y;
+    //    x = X1;//округление вниз
+    //    y = Y1;
+    //    RGBTRIPLE Out;
+    //
+    //    Ave.rgbtBlue = matrIn[y][x].rgbtBlue * (x + 1 - X1) * (y + 1 - Y1) + matrIn[y + 1][x].rgbtBlue * (x + 1 - X1) * (Y1 - y) + matrIn[y][x + 1].rgbtBlue * (X1 - x) * (y + 1 - Y1) + matrIn[y + 1][x + 1].rgbtBlue * (X1 - x) * (Y1 - y);
+    //    Ave.rgbtGreen = matrIn[y][x].rgbtGreen * (x + 1 - X1) * (y + 1 - Y1) + matrIn[y + 1][x].rgbtGreen * (x + 1 - X1) * (Y1 - y) + matrIn[y][x + 1].rgbtGreen * (X1 - x) * (y + 1 - Y1) + matrIn[y + 1][x + 1].rgbtGreen * (X1 - x) * (Y1 - y);
+    //    Ave.rgbtRed = matrIn[y][x].rgbtRed * (x + 1 - X1) * (y + 1 - Y1) + matrIn[y + 1][x].rgbtRed * (x + 1 - X1) * (Y1 - y) + matrIn[y][x + 1].rgbtRed * (X1 - x) * (y + 1 - Y1) + matrIn[y + 1][x + 1].rgbtRed * (X1 - x) * (Y1 - y);
+    //
+    //    //sAve.norm();
+    //    Out.rgbtBlue = Ave.rgbtBlue;
+    //    Out.rgbtGreen = Ave.rgbtGreen;
+    //    Out.rgbtRed = Ave.rgbtRed;
+    //
+    //    return Out;
+    //}
 
-        double ki = 1;
-        double kj = 1;
-        int kim;
-        int kjm;
-        double kid;
-        double kjd;
-
-        for (int i = -2; i < 4; ++i)
-        {
-            kim = (x - i) * 1000 + 3000;
-            kid = (x - i) * 1000 + 3000 - kim;
-
-            ki = LansoshProg[kim] * (1 - kid) + LansoshProg[kim + 1] * (kid);
-            //           ki = Lansosh[];//x-i*1000+3000
-
-                       //cout << "\n\nki = " << ki;
-            for (int j = -2; j < 4; ++j)
-            {
-                kjm = (y - j) * 1000 + 3000;
-                kjd = (y - j) * 1000 + 3000 - kjm;
-
-                kj = LansoshProg[kjm] * (1 - kjd) + LansoshProg[kjm + 1] * (kjd);
-
-                /*if (y + j == 0)
-                    kj = 1;
-                else
-                    kj = a * sin(M_PI * (y - j)) * sin(M_PI * (y - j) / a) / (M_PI * M_PI * (y - j) * (y - j));*/
-
-                Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
-                Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
-                Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
-            }
-        }
-
-        Ave.norm();
-        Out.rgbtBlue = Ave.rgbtBlue;
-        Out.rgbtGreen = Ave.rgbtGreen;
-        Out.rgbtRed = Ave.rgbtRed;
-
-        return Out;
-    }
-
-    RGBTRIPLE getAve2Per(double Y1, double X1) {
-        PIX Ave;
-        Ave.clc();
-        size_t x, y;
-        x = X1;//округление вниз
-        y = Y1;
-        RGBTRIPLE Out;
-
-        Ave.rgbtBlue = matrIn[y][x].rgbtBlue * (x + 1 - X1) * (y + 1 - Y1) + matrIn[y + 1][x].rgbtBlue * (x + 1 - X1) * (Y1 - y) + matrIn[y][x + 1].rgbtBlue * (X1 - x) * (y + 1 - Y1) + matrIn[y + 1][x + 1].rgbtBlue * (X1 - x) * (Y1 - y);
-        Ave.rgbtGreen = matrIn[y][x].rgbtGreen * (x + 1 - X1) * (y + 1 - Y1) + matrIn[y + 1][x].rgbtGreen * (x + 1 - X1) * (Y1 - y) + matrIn[y][x + 1].rgbtGreen * (X1 - x) * (y + 1 - Y1) + matrIn[y + 1][x + 1].rgbtGreen * (X1 - x) * (Y1 - y);
-        Ave.rgbtRed = matrIn[y][x].rgbtRed * (x + 1 - X1) * (y + 1 - Y1) + matrIn[y + 1][x].rgbtRed * (x + 1 - X1) * (Y1 - y) + matrIn[y][x + 1].rgbtRed * (X1 - x) * (y + 1 - Y1) + matrIn[y + 1][x + 1].rgbtRed * (X1 - x) * (Y1 - y);
-
-        //sAve.norm();
-        Out.rgbtBlue = Ave.rgbtBlue;
-        Out.rgbtGreen = Ave.rgbtGreen;
-        Out.rgbtRed = Ave.rgbtRed;
-
-        return Out;
-    }
-
-    RGBTRIPLE getAve2(double Y1, double X1) {
-        PIX Ave;
-        Ave.clc();
-        size_t x, y;
-        x = X1;//округление вниз
-        y = Y1;
-        RGBTRIPLE Out;
-
-        Ave.rgbtBlue = (matrIn[y][x].rgbtBlue + matrIn[y][x + 1].rgbtBlue + matrIn[y + 1][x].rgbtBlue + matrIn[y + 1][x + 1].rgbtBlue) / 4;
-        Ave.rgbtGreen = (matrIn[y][x].rgbtGreen + matrIn[y][x + 1].rgbtGreen + matrIn[y + 1][x].rgbtGreen + matrIn[y + 1][x + 1].rgbtGreen) / 4;
-        Ave.rgbtRed = (matrIn[y][x].rgbtRed + matrIn[y][x + 1].rgbtRed + matrIn[y + 1][x].rgbtRed + matrIn[y + 1][x + 1].rgbtRed) / 4;
-
-        //Ave.norm();
-        Out.rgbtBlue = Ave.rgbtBlue;
-        Out.rgbtGreen = Ave.rgbtGreen;
-        Out.rgbtRed = Ave.rgbtRed;
-
-        return Out;
-    }
+    //RGBTRIPLE getAve2(double Y1, double X1) {//...
+    
+    //    PIX Ave;
+    //    Ave.clc();
+    //    size_t x, y;
+    //    x = X1;//округление вниз
+    //    y = Y1;
+    //    RGBTRIPLE Out;
+    //
+    //    Ave.rgbtBlue = (matrIn[y][x].rgbtBlue + matrIn[y][x + 1].rgbtBlue + matrIn[y + 1][x].rgbtBlue + matrIn[y + 1][x + 1].rgbtBlue) / 4;
+    //    Ave.rgbtGreen = (matrIn[y][x].rgbtGreen + matrIn[y][x + 1].rgbtGreen + matrIn[y + 1][x].rgbtGreen + matrIn[y + 1][x + 1].rgbtGreen) / 4;
+    //    Ave.rgbtRed = (matrIn[y][x].rgbtRed + matrIn[y][x + 1].rgbtRed + matrIn[y + 1][x].rgbtRed + matrIn[y + 1][x + 1].rgbtRed) / 4;
+    //
+    //    //Ave.norm();
+    //    Out.rgbtBlue = Ave.rgbtBlue;
+    //    Out.rgbtGreen = Ave.rgbtGreen;
+    //    Out.rgbtRed = Ave.rgbtRed;
+    //
+    //    return Out;
+    //}
 
     RGBTRIPLE** getM() {
         return matrIn;
@@ -432,6 +507,7 @@ class DoOutFile {
     size_t Hout;
     size_t Wout;
     int paddingOut;
+    size_t offsetOut=0;
 
     vector<RGBTRIPLE> lineOut;
 
@@ -487,14 +563,48 @@ public:
         paddingOut = (4 - (Wout * 3) % 4) % 4;
         paddingOut1 = paddingOut;
 
-        lineOut.resize(Wout);
+        lineOut.resize(sampling);
 
         black.rgbtBlue = 0;
         black.rgbtGreen = 0;
         black.rgbtRed = 0;
     }
 
-    void OutFile(size_t Hin, size_t Win, FILE* f, RGBTRIPLE** matr,MATR& matrOrigin){
+    void setOffset(size_t offsetOut1) {
+        offsetOut = offsetOut1;
+    }
+
+    void FrameCoordinate(int Xframe, int Yframe, double& minX, double& minY, double& maxX, double&maxY) {
+        double Ax, Ay;
+
+        Ax = (sampling * Xframe + dx) * cosA - (sampling * Yframe + dy) * sinA;
+        Ay = (sampling * Xframe + dx) * sinA + (sampling * Yframe + dy) * cosA;
+        minX = maxX = Ax;
+        minY = maxY = Ay;
+        Ax = (sampling * Xframe + sampling - 1 + dx) * cosA - (sampling * Yframe + dy) * sinA;
+        Ay = (sampling * Xframe + sampling - 1 + dx) * sinA + (sampling * Yframe + dy) * cosA;
+        minX = min(minX, Ax);
+        minY = min(minY, Ay);
+        maxX = max(maxX, Ax);
+        maxY = max(maxY, Ay);
+        Ax = (sampling * Xframe + sampling - 1 + dx) * cosA - (sampling * Yframe + sampling - 1 + dy) * sinA;
+        Ay = (sampling * Xframe + sampling - 1 + dx) * sinA + (sampling * Yframe + sampling - 1 + dy) * cosA;
+        minX = min(minX, Ax);
+        minY = min(minY, Ay);
+        maxX = max(maxX, Ax);
+        maxY = max(maxY, Ay);
+        Ax = (sampling * Xframe + dx) * cosA - (sampling * Yframe + sampling - 1 + dy) * sinA;
+        Ay = (sampling * Xframe + dx) * sinA + (sampling * Yframe + sampling - 1 + dy) * cosA;
+        minX = min(minX, Ax);
+        minY = min(minY, Ay);
+        maxX = max(maxX, Ax);
+        maxY = max(maxY, Ay);
+        //это было определение координат для кусочка
+    }
+
+    void OutFile(size_t Hin, size_t Win, FILE* f,MATR& matrOrigin, FILE* fIn){
+        double minX, minY;
+        double maxX, maxY;
 
         double Y1;
         double X1;
@@ -503,26 +613,169 @@ public:
         //FileWithDes fL("LansoshProg.lans", "rb");//LansoshProg
         //fread(LansoshProg, sizeof(LansoshProg), 1, fL.getF());
 
-        for (int y = 0; y < Hout; ++y) {
-            for (int x = 0; x < Wout; ++x) {
+        int Nh = Hout / sampling;
+        int Nw = Wout / sampling;
+        int seek = offsetOut;
 
-                Y1 = (x + dx) * sinA + (y + dy) * cosA + extend;
-                X1 = (x + dx) * cosA - (y + dy) * sinA + extend;
+        for (int Yframe = 0; Yframe < Nh; ++Yframe) {
+            for (int Xframe = 0; Xframe < Nw; ++Xframe) {//перебор всех фреймов, кроме крайних
+                FrameCoordinate(Xframe, Yframe, minX, minY, maxX, maxY);
 
-                if (X1 >= extend && X1 <= Win+extend-1 && Y1 >= extend && Y1 <= Hin+extend-1) {//---------------------------------
-                    //lineOut[x] = matrOrigin.getLans(Y1, X1);
-                    lineOut[x] = matrOrigin.getLansGlob(Y1, X1);
-                    //lineOut[x] = matrOrigin.getLansProg(Y1, X1, LansoshProg);
-                    //lineOut[x]= matrOrigin.getBilineWiki(Y1, X1);
-                    //lineOut[x] = matrOrigin.getAve2Per(Y1, X1);
-                    //lineOut[x] = matrOrigin.getAve2(Y1, X1);
-                    //lineOut[x] = matr[Y1][X1];
+                //отправка на чтение
+                int X=minX, Y=minY;
+                int startX = 0, startY = 0;
+                int h = sampling, w = sampling;
+                if (minX < 0) {
+                    X = 0;
+                    startX = -minX;
+                    w -= startX;
                 }
-                else {
-                    lineOut[x] = black;
+                if (minY < 0) {
+                    Y = 0;
+                    startY = -minY;
+                    h -= startY;
+                }
+                if (maxX > Win-1) {
+                    w -= (maxX-Win);
+                }
+                if (maxY > Hin - 1) {
+                    h -= (maxY - Hin);
+                }
+                matrOrigin.ReadFrame(fIn, X,  Y, startX, startY, h, w);
+
+                fseek(f, seek, SEEK_SET);
+                seek = Wout*sizeof(RGBTRIPLE) + paddingOut - sampling;
+
+                for (int y = sampling * Yframe; y < sampling * (Yframe + 1); ++y) {
+                    for (int x = sampling * Xframe; x < sampling * (Xframe + 1); ++x) {
+                        Y1 = (x + dx) * sinA + (y + dy) * cosA;
+                        X1 = (x + dx) * cosA - (y + dy) * sinA;
+
+                        if (X1 >= extend && X1 <= Win + extend - 1 && Y1 >= extend && Y1 <= Hin + extend - 1) {
+                            X1 = X1 - X + extend;
+                            Y1 = Y1 - Y + extend;
+
+                            //lineOut[x - sampling * Xframe] = matrOrigin.get(Y1, X1);
+                            lineOut[x - sampling * Xframe] = matrOrigin.getLansGlobFrame(Y1, X1);
+                        }
+                        else {
+                            lineOut[x - sampling * Xframe] = black;
+                        }
+                    }
+                    fwrite(lineOut.data(), Wout * 3, 1, f);//запись в bmp
+                    fseek(f, seek, SEEK_CUR);
                 }
             }
-            fwrite(lineOut.data(), Wout * 3, 1, f);//запись в bmp
+        }
+
+        if (Wout % sampling) {
+            for (int Yframe = 0; Yframe < Nh; ++Yframe) {
+                FrameCoordinate(Nw, Yframe, minX, minY, maxX, maxY);
+
+                int X = minX, Y = minY;
+                int startX = 0, startY = 0;
+                int h = sampling, w = sampling;
+                if (minX < 0) {
+                    X = 0;
+                    startX = -minX;
+                    w -= startX;
+                }
+                if (minY < 0) {
+                    Y = 0;
+                    startY = -minY;
+                    h -= startY;
+                }
+                if (maxY > Hin - 1) {
+                    h -= (maxY - Hin);
+                }
+                w = Wout % sampling+extend;
+                matrOrigin.ReadFrame(fIn, X, Y, startX, startY, h, w);
+
+                seek = offsetOut + Nw * sampling * sizeof(RGBTRIPLE);
+
+                fseek(f, seek, SEEK_SET);
+                seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling);
+
+                for (int y = sampling * Yframe; y < sampling * (Yframe + 1); ++y) {
+                    for (int x = sampling * Nw; x < sampling * (Nw + 1); ++x) {
+                        Y1 = (x + dx) * sinA + (y + dy) * cosA;
+                        X1 = (x + dx) * cosA - (y + dy) * sinA;
+
+                        if (X1 >= extend && X1 <= Win + extend - 1 && Y1 >= extend && Y1 <= Hin + extend - 1) {
+                            X1 = X1 - X + extend;
+                            Y1 = Y1 - Y + extend;
+
+
+                            lineOut[x - sampling * Nw] = matrOrigin.getLansGlobFrame(Y1, X1);
+                        }
+                        else {
+                            lineOut[x - sampling * Nw] = black;
+                        }
+                    }
+                    fwrite(lineOut.data(), Wout * 3, 1, f);//запись в bmp
+                    fseek(f, seek, SEEK_CUR);
+                }
+
+
+            }
+        }
+
+        if (Hout % sampling) {
+            for (int Xframe = 0; Xframe < Nw; ++Xframe) {
+                FrameCoordinate(Xframe, Nh, minX, minY, maxX, maxY);
+
+                int X = minX, Y = minY;
+                int startX = 0, startY = 0;
+                int h = sampling, w = sampling;
+                if (minX < 0) {
+                    X = 0;
+                    startX = -minX;
+                    w -= startX;
+                }
+                if (minY < 0) {
+                    Y = 0;
+                    startY = -minY;
+                    h -= startY;
+                }
+                if (maxY > Hin - 1) {
+                    h -= (maxY - Hin);
+                }
+                w = Wout % sampling + extend;
+                matrOrigin.ReadFrame(fIn, X, Y, startX, startY, h, w);
+
+                seek = offsetOut + Nw * sampling * sizeof(RGBTRIPLE);
+
+                fseek(f, seek, SEEK_SET);
+                seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling);
+
+                for (int y = sampling * Nh; y < sampling * (Nh + 1); ++y) {
+                    for (int x = sampling * Xframe; x < sampling * (Xframe + 1); ++x) {
+                        Y1 = (x + dx) * sinA + (y + dy) * cosA;
+                        X1 = (x + dx) * cosA - (y + dy) * sinA;
+
+                        if (X1 >= extend && X1 <= Win + extend - 1 && Y1 >= extend && Y1 <= Hin + extend - 1) {
+                            X1 = X1 - X + extend;
+                            Y1 = Y1 - Y + extend;
+
+
+                            lineOut[x - sampling * Xframe] = matrOrigin.getLansGlobFrame(Y1, X1);
+                        }
+                        else {
+                            lineOut[x - sampling * Xframe] = black;
+                        }
+                    }
+                    fwrite(lineOut.data(), Wout * 3, 1, f);//запись в bmp
+                    fseek(f, seek, SEEK_CUR);
+                }
+            }
+        }
+
+        seek = offsetOut + Wout * sizeof(RGBTRIPLE);
+        fseek(f, seek, SEEK_SET);
+        fwrite(&trash, 1, paddingOut, f);
+        seek = Wout * sizeof(RGBTRIPLE);
+        for (int i = 1; i < Hout; ++i) {
+            fseek(f, seek, SEEK_CUR);
             fwrite(&trash, 1, paddingOut, f);
         }
     }
@@ -530,7 +783,7 @@ public:
 
 int main(int argc, char* argv[]) {
     setlocale(LC_ALL, "Russian");//подключение русского языка6
-    cout << __cplusplus << endl;
+    //cout << __cplusplus << endl;
 
     //int64_t t0 = GetTickCount();
 
@@ -549,11 +802,12 @@ int main(int argc, char* argv[]) {
 
     paddingIn = (4 - (bihIn.biWidth * 3) % 4) % 4;
 
-    MATR matr(bihIn.biHeight, bihIn.biWidth);
-    matr.FillAll(f1.getF(), paddingIn);
+    int S1 = (sinA + cosA) * sampling;
+
+    MATR matr(S1, S1, bfhIn.bfOffBits, bihIn.biWidth, paddingIn);
+    //matr.FillAll(f1.getF(), paddingIn);
 
     DoOutFile DoFile2(bihIn.biHeight, bihIn.biWidth, bihOut.biWidth, bihOut.biHeight, paddingOut);
-
 
     bihOut.biSize = sizeof(bihOut);
     //bihOut.biWidth = abs(bihIn.biWidth * cosA) + abs(bihIn.biHeight * sinA) + 2;
@@ -573,14 +827,16 @@ int main(int argc, char* argv[]) {
     bfhOut.bfOffBits = sizeof(bfhOut) + sizeof(bihOut);
     bfhOut.bfSize = sizeof(bfhOut) + sizeof(bihOut) + bihOut.biSizeImage;
 
+    DoFile2.setOffset(bfhOut.bfOffBits);
+
     fwrite(&bfhOut, sizeof(bfhOut), 1, f2.getF());
     fwrite(&bihOut, sizeof(bihOut), 1, f2.getF());
 
     cout << "\n\nразмер исходного изображения: " << bihIn.biHeight << "*" << bihIn.biWidth << endl;
     cout << "\n\nразмер итогового изображения: " << bihOut.biHeight << "*" << bihOut.biWidth << endl;
 
-    
-    DoFile2.OutFile(bihIn.biHeight, bihIn.biWidth, f2.getF(), matr.getM(), matr);
+    DoFile2.OutFile(bihIn.biHeight, bihIn.biWidth, f2.getF(), matr, f1.getF());
+
 
     return 0;
 }

@@ -1,40 +1,44 @@
 ﻿  Source.cpp
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(127,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(128,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(192,27): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(193,28): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(194,26): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(205,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(206,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(266,27): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(267,28): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(268,26): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(279,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(280,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(296,34): warning C4244: =: преобразование "double" в "int", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(305,38): warning C4244: =: преобразование "double" в "int", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(322,27): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(323,28): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(324,26): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(335,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(336,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(352,34): warning C4244: =: преобразование "double" в "int", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(361,38): warning C4244: =: преобразование "double" в "int", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(378,27): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(379,28): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(380,26): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(389,13): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(390,13): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(398,27): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(399,28): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(400,26): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(409,13): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(410,13): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(418,27): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(419,28): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(420,26): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(477,20): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(478,1): warning C4267: =: преобразование из "size_t" в "LONG"; возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(484,20): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
-C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(485,1): warning C4267: =: преобразование из "size_t" в "LONG"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(112,1): warning C4267: аргумент: преобразование из "size_t" в "long"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(116,1): warning C4267: аргумент: преобразование из "size_t" в "long"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(315,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(316,14): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(332,34): warning C4244: =: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(339,38): warning C4244: =: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(351,27): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(352,28): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(353,26): warning C4244: =: преобразование "double" в "BYTE", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(553,20): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(554,1): warning C4267: =: преобразование из "size_t" в "LONG"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(560,20): warning C4244: =: преобразование "double" в "size_t", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(561,1): warning C4267: =: преобразование из "size_t" в "LONG"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(616,1): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(617,1): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(618,1): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(625,22): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(625,30): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(630,30): warning C4244: =: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(635,30): warning C4244: =: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(639,31): warning C4244: -=: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(642,32): warning C4244: -=: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(647,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(658,81): warning C4244: аргумент: преобразование "double" в "size_t", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(658,77): warning C4244: аргумент: преобразование "double" в "size_t", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(675,23): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(675,33): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(680,30): warning C4244: =: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(685,30): warning C4244: =: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(689,32): warning C4244: -=: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(694,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(697,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(727,23): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(727,33): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(732,30): warning C4244: =: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(737,30): warning C4244: =: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(741,32): warning C4244: -=: преобразование "double" в "int", возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(746,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(749,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(773,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(776,1): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\R---I---B\Source.cpp(805,12): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
   R---I---B.vcxproj -> C:\Users\Наталья\Desktop\работа\rotate---interpol---bmp\R---I---B\x64\Debug\R---I---B.exe
