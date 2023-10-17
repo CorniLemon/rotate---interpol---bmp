@@ -74,23 +74,24 @@ public:
 
 class MATR {
     RGBTRIPLE** matrIn;
-    size_t Hin;
-    size_t Win;
+    size_t Hmatr;
+    size_t Wmatr;
     size_t del;
     size_t offset;
     size_t  Worig;
     size_t padding;
+    FILE* fIn;
 
 
 public:
 
-    MATR(size_t Hin, size_t Win, size_t offset, size_t  Worig, size_t padding) 
-        : Hin(Hin), Win(Win), offset(offset), Worig(Worig), padding(padding)
+    MATR(size_t Hin, size_t Win, size_t offset, size_t  Worig, size_t padding, FILE* fin) 
+        : Hmatr(Hin), Wmatr(Win), offset(offset), Worig(Worig), padding(padding), fIn(fin)
     {
-        del = Hin + 2 * extend;
+        del = Hmatr + 2 * extend;
         matrIn = new RGBTRIPLE * [del];
         for (size_t i = 0; i < del; ++i) {
-            matrIn[i] = new RGBTRIPLE[Win + 2 * extend];
+            matrIn[i] = new RGBTRIPLE[Wmatr + 2 * extend];
         }
     }
 
@@ -105,30 +106,31 @@ public:
         return matrIn[i][j];
     }
 
-    void ReadFrame(FILE* f, int X, int Y, int startx, int starty, int h, int w) 
+    void ReadFrame(int X, int Y, int startx, int starty, int h, int w) 
         //X,Y -откуда начинать читать; start..- куда начинать читать; h,w - а сколько вообще читать
     {
         size_t seek = offset + Y * (Worig * sizeof(RGBTRIPLE) + padding) + X * sizeof(RGBTRIPLE);
-        fseek(f, seek, SEEK_SET);
-        seek = (Worig + w) * sizeof(RGBTRIPLE) + padding;
+        fseek(fIn, seek, SEEK_SET);
+        seek = (Worig - w) * sizeof(RGBTRIPLE) + padding;
         for (int y = 0; y < h; ++y) {
-            fread(matrIn[starty+y] + startx, w * 3, 1, f);
-            fseek(f, seek, SEEK_SET);
-        }
+            fread(matrIn[starty+y] + startx, w * 3, 1, fIn);
+            fseek(fIn, seek, SEEK_CUR);
+        }//читает правильно, тут всё ок
+        //не ок, откуда то достаёт серые
 
-        for (int y = 0; y < Hin; ++y) {
+        for (int y = 0; y < Hmatr; ++y) {
             for (int i = 0; i < startx; ++i) {//расширение в лево <--
                 matrIn[y][i] = matrIn[y][startx];
             }
-            for (int i = startx+w; i < Win; ++i) {//расширение в право -->
+            for (int i = startx+w; i < Wmatr; ++i) {//расширение в право -->
                 matrIn[y][i] = matrIn[y][startx+w-1];
             }
         }
-        for (int x = 0; x < Hin; ++x) {
+        for (int x = 0; x < Wmatr; ++x) {
             for (int i = 0; i < starty; ++i) {//расширение в низ V
                 matrIn[x][i] = matrIn[x][startx];
             }
-            for (int i = starty + h; i < Hin; ++i) {//расширение в верх ^
+            for (int i = starty + h; i < Hmatr; ++i) {//расширение в верх ^
                 matrIn[x][i] = matrIn[x][starty + h - 1];
             }
         }
@@ -150,160 +152,6 @@ public:
     //        memcpy(matrIn[i], matrIn[2 * extend - 1 - i], (Win + 2 * extend) * sizeof(RGBTRIPLE));
     //        memcpy(matrIn[Hin + 2 * extend - 1 - i], matrIn[Hin + i], (Win + 2 * extend) * sizeof(RGBTRIPLE));
     //    }
-    //}
-
-    //RGBTRIPLE getBilineWiki(double Y1, double X1) {//...
-   
-    //    PIX Ave;
-    //    Ave.clc();
-    //    RGBTRIPLE Out;
-    //
-    //    size_t X0, Y0;
-    //    X0 = X1;//округление вниз//целая часть
-    //    Y0 = Y1;
-    //
-    //    double x = X1 - X0;
-    //    double y = Y1 - Y0;
-    //
-    //    x = 1 - x;//они реально инвертированы
-    //    y = 1 - y;
-    //    
-    //    double b[4][4] = {
-    //        {
-    //            //5,
-    //            (1 / 36.)* x* y* (x - 1)* (x - 2)* (y - 1)* (y - 2),
-    //            (-1 / 12.)* x* (x - 1)* (x - 2)* (y - 1)* (y - 2)* (y + 1),
-    //            (1 / 12.)* x* y* (x - 1)* (x - 2)* (y + 1)* (y - 2),
-    //            (-1 / 36.)* x* y* (x - 1)* (x - 2)* (y - 1)* (y + 1)
-    //        },
-    //        {
-    //            (-1 / 12.)* y* (x - 1)* (x - 2)* (x + 1)* (y - 1)* (y - 2),
-    //            (1 / 4.)* (x - 1)* (x - 2)* (x + 1)* (y - 1)* (y - 2)* (y + 1),
-    //            (-1 / 4.)* y* (x - 1)* (x - 2)* (x + 1)* (y + 1)* (y - 2),
-    //            (1 / 12.)* y* (x - 1)* (x - 2)* (x + 1)* (y - 1)* (y + 1)
-    //        },
-    //        {
-    //            (1 / 12.)* x* y* (x + 1)* (x - 2)* (y - 1)* (y - 2),
-    //            (-1 / 4.)* x* (x + 1)* (x - 2)* (y - 1)* (y - 2)* (y + 1),
-    //            (1 / 4.)* x* y* (x + 1)* (x - 2)* (y + 1)* (y - 2),
-    //            (-1 / 12.)* x* y* (x + 1)* (x - 2)* (y - 1)* (y + 1)
-    //        },
-    //        {
-    //            (-1 / 36.)* x* y* (x - 1)* (x + 1)* (y - 1)* (y - 2),
-    //            (1 / 12.)* x* (x - 1)* (x + 1)* (y - 1)* (y - 2)* (y + 1),
-    //            (-1 / 12.)* x* y* (x - 1)* (x + 1)* (y + 1)* (y - 2),
-    //            (1 / 36.)* x* y* (x - 1)* (x + 1)* (y - 1)* (y + 1)
-    //        }
-    //    };
-    //
-    //    //b[0] = 1 / 4 * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) * (y + 1);
-    //    //b[1] = -1 / 4 * x * (x + 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1);
-    //    //b[2] = -1 / 4 * y * (x - 1) * (x - 2) * (x + 1) * (y + 1) * (y - 2);
-    //    //b[3] = 1 / 4 * x * y * (x + 1) * (x - 2) * (y + 1) * (y - 2);
-    //    //b[4] = -1 / 12 * x * (x - 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1);
-    //    //b[5] = -1 / 12 * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2);
-    //    //b[6] = 1 / 12 * x * y * (x - 1) * (x - 2) * (y + 1) * (y - 2);
-    //    //b[7] = 1 / 12 * x * y * (x + 1) * (x - 2) * (y - 1) * (y - 2);
-    //    //b[8] = 1 / 12 * x * (x - 1) * (x + 1) * (y - 1) * (y - 2) * (y + 1);
-    //    //b[9] = 1 / 12 * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y + 1);
-    //    //b[10] = 1 / 36 * x * y * (x - 1) * (x - 2) * (y - 1) * (y - 2);
-    //    //b[11] = -1 / 12 * x * y * (x - 1) * (x + 1) * (y + 1) * (y - 2);
-    //    //b[12] = -1 / 12 * x * y * (x + 1) * (x - 2) * (y - 1) * (y + 1);
-    //    //b[13] = -1 / 36 * x * y * (x - 1) * (x + 1) * (y - 1) * (y - 2);
-    //    //b[14] = -1 / 36 * x * y * (x - 1) * (x - 2) * (y - 1) * (y + 1);
-    //    //b[15] = 1 / 36 * x * y * (x - 1) * (x + 1) * (y - 1) * (y + 1);
-    //
-    //    Ave.clc();
-    //
-    //    for (int i = 0; i < 4; ++i)
-    //        for (int j = 0; j < 4; ++j)
-    //        {
-    //            Ave.rgbtBlue += matrIn[Y0 + i - 1][X0 + j - 1].rgbtBlue * b[i][j];
-    //            Ave.rgbtGreen += matrIn[Y0 + i - 1][X0 + j - 1].rgbtGreen * b[i][j];
-    //            Ave.rgbtRed += matrIn[Y0 + i - 1][X0 + j - 1].rgbtRed * b[i][j];
-    //        }
-    //
-    //    Ave.norm();
-    //    Out.rgbtBlue = Ave.rgbtBlue;
-    //    Out.rgbtGreen = Ave.rgbtGreen;
-    //    Out.rgbtRed = Ave.rgbtRed;
-    //
-    //    return Out;
-    //}
-
-    //RGBTRIPLE getLans(double Y1, double X1) {//...
-    
-    //    PIX Ave;
-    //    Ave.clc();
-    //    RGBTRIPLE Out;
-    //
-    //    size_t X0, Y0;
-    //    X0 = X1;//округление вниз//целая часть
-    //    Y0 = Y1;
-    //
-    //    double x = X1 - X0;
-    //    double y = Y1 - Y0;
-    //
-    //    //double b[4][4] = {
-    //    //    {
-    //    //        //5,
-    //    //        (1 / 36.) * x * y * (x - 1) * (x - 2) * (y - 1) * (y - 2),
-    //    //        (-1 / 12.) * x * (x - 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1),
-    //    //        (1 / 12.) * x * y * (x - 1) * (x - 2) * (y + 1) * (y - 2),
-    //    //        (-1 / 36.) * x * y * (x - 1) * (x - 2) * (y - 1) * (y + 1)
-    //    //    },
-    //    //    {
-    //    //        (-1 / 12.) * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2),
-    //    //        (1 / 4.) * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) * (y + 1),
-    //    //        (-1 / 4.) * y * (x - 1) * (x - 2) * (x + 1) * (y + 1) * (y - 2),
-    //    //        (1 / 12.) * y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y + 1)
-    //    //    },
-    //    //    {
-    //    //        (1 / 12.) * x * y * (x + 1) * (x - 2) * (y - 1) * (y - 2),
-    //    //        (-1 / 4.) * x * (x + 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1),
-    //    //        (1 / 4.) * x * y * (x + 1) * (x - 2) * (y + 1) * (y - 2),
-    //    //        (-1 / 12.) * x * y * (x + 1) * (x - 2) * (y - 1) * (y + 1)
-    //    //    },
-    //    //    {
-    //    //        (-1 / 36.) * x * y * (x - 1) * (x + 1) * (y - 1) * (y - 2),
-    //    //        (1 / 12.) * x * (x - 1) * (x + 1) * (y - 1) * (y - 2) * (y + 1),
-    //    //        (-1 / 12.) * x * y * (x - 1) * (x + 1) * (y + 1) * (y - 2),
-    //    //        (1 / 36.) * x * y * (x - 1) * (x + 1) * (y - 1) * (y + 1)
-    //    //    }
-    //    //};
-    //
-    //    int a = 3;
-    //
-    //    double ki = 1;
-    //    double kj = 1;
-    //
-    //    for (int i = -2; i < 4; ++i)
-    //    {
-    //        if (x + i == 0)
-    //            ki = 1;
-    //        else
-    //            ki = a * sin(M_PI * (x - i)) * sin(M_PI * (x - i) / a) / (M_PI * M_PI * (x - i) * (x - i));
-    //
-    //        //cout << "\n\nki = " << ki;
-    //        for (int j = -2; j < 4; ++j)
-    //        {
-    //            if (y + j == 0)
-    //                kj = 1;
-    //            else
-    //                kj= a * sin(M_PI * (y - j)) * sin(M_PI * (y - j) / a) / (M_PI * M_PI * (y - j) * (y - j));
-    //
-    //            Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
-    //            Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
-    //            Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
-    //        }
-    //    }
-    //
-    //    Ave.norm();
-    //    Out.rgbtBlue = Ave.rgbtBlue;
-    //    Out.rgbtGreen = Ave.rgbtGreen;
-    //    Out.rgbtRed = Ave.rgbtRed;
-    //
-    //    return Out;
     //}
 
     RGBTRIPLE getLansGlobFrame(double Y1, double X1) {
@@ -348,7 +196,7 @@ public:
         }
 
         Ave.norm();
-        Out.rgbtBlue = Ave.rgbtBlue;
+        Out.rgbtBlue = Ave.rgbtBlue;//создаётся серым!!!!!!!!!!!!!!
         Out.rgbtGreen = Ave.rgbtGreen;
         Out.rgbtRed = Ave.rgbtRed;
 
@@ -398,98 +246,6 @@ public:
     //    }
     //
     //    Ave.norm();
-    //    Out.rgbtBlue = Ave.rgbtBlue;
-    //    Out.rgbtGreen = Ave.rgbtGreen;
-    //    Out.rgbtRed = Ave.rgbtRed;
-    //
-    //    return Out;
-    //}
-
-    //RGBTRIPLE getLansProg(double Y1, double X1, double LansoshProg[]) {//...
-    
-    //    PIX Ave;
-    //    Ave.clc();
-    //    RGBTRIPLE Out;
-    //
-    //    size_t X0, Y0;
-    //    X0 = X1;//округление вниз//целая часть
-    //    Y0 = Y1;
-    //
-    //    double x = X1 - X0;
-    //    double y = Y1 - Y0;
-    //
-    //    int a = 3;
-    //
-    //    double ki = 1;
-    //    double kj = 1;
-    //    int kim;
-    //    int kjm;
-    //    double kid;
-    //    double kjd;
-    //
-    //    for (int i = -2; i < 4; ++i)
-    //    {
-    //        kim = (x - i) * 1000 + 3000;
-    //        kid = (x - i) * 1000 + 3000 - kim;
-    //
-    //        ki = LansoshProg[kim] * (1 - kid) + LansoshProg[kim + 1] * (kid);
-    //
-    //        for (int j = -2; j < 4; ++j)
-    //        {
-    //            kjm = (y - j) * 1000 + 3000;
-    //            kjd = (y - j) * 1000 + 3000 - kjm;
-    //
-    //            kj = LansoshProg[kjm] * (1 - kjd) + LansoshProg[kjm + 1] * (kjd);
-    //
-    //            Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
-    //            Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
-    //            Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
-    //        }
-    //    }
-    //
-    //    Ave.norm();
-    //    Out.rgbtBlue = Ave.rgbtBlue;
-    //    Out.rgbtGreen = Ave.rgbtGreen;
-    //    Out.rgbtRed = Ave.rgbtRed;
-    //
-    //    return Out;
-    //}
-
-    //RGBTRIPLE getAve2Per(double Y1, double X1) {//...
-    
-    //    PIX Ave;
-    //    Ave.clc();
-    //    size_t x, y;
-    //    x = X1;//округление вниз
-    //    y = Y1;
-    //    RGBTRIPLE Out;
-    //
-    //    Ave.rgbtBlue = matrIn[y][x].rgbtBlue * (x + 1 - X1) * (y + 1 - Y1) + matrIn[y + 1][x].rgbtBlue * (x + 1 - X1) * (Y1 - y) + matrIn[y][x + 1].rgbtBlue * (X1 - x) * (y + 1 - Y1) + matrIn[y + 1][x + 1].rgbtBlue * (X1 - x) * (Y1 - y);
-    //    Ave.rgbtGreen = matrIn[y][x].rgbtGreen * (x + 1 - X1) * (y + 1 - Y1) + matrIn[y + 1][x].rgbtGreen * (x + 1 - X1) * (Y1 - y) + matrIn[y][x + 1].rgbtGreen * (X1 - x) * (y + 1 - Y1) + matrIn[y + 1][x + 1].rgbtGreen * (X1 - x) * (Y1 - y);
-    //    Ave.rgbtRed = matrIn[y][x].rgbtRed * (x + 1 - X1) * (y + 1 - Y1) + matrIn[y + 1][x].rgbtRed * (x + 1 - X1) * (Y1 - y) + matrIn[y][x + 1].rgbtRed * (X1 - x) * (y + 1 - Y1) + matrIn[y + 1][x + 1].rgbtRed * (X1 - x) * (Y1 - y);
-    //
-    //    //sAve.norm();
-    //    Out.rgbtBlue = Ave.rgbtBlue;
-    //    Out.rgbtGreen = Ave.rgbtGreen;
-    //    Out.rgbtRed = Ave.rgbtRed;
-    //
-    //    return Out;
-    //}
-
-    //RGBTRIPLE getAve2(double Y1, double X1) {//...
-    
-    //    PIX Ave;
-    //    Ave.clc();
-    //    size_t x, y;
-    //    x = X1;//округление вниз
-    //    y = Y1;
-    //    RGBTRIPLE Out;
-    //
-    //    Ave.rgbtBlue = (matrIn[y][x].rgbtBlue + matrIn[y][x + 1].rgbtBlue + matrIn[y + 1][x].rgbtBlue + matrIn[y + 1][x + 1].rgbtBlue) / 4;
-    //    Ave.rgbtGreen = (matrIn[y][x].rgbtGreen + matrIn[y][x + 1].rgbtGreen + matrIn[y + 1][x].rgbtGreen + matrIn[y + 1][x + 1].rgbtGreen) / 4;
-    //    Ave.rgbtRed = (matrIn[y][x].rgbtRed + matrIn[y][x + 1].rgbtRed + matrIn[y + 1][x].rgbtRed + matrIn[y + 1][x + 1].rgbtRed) / 4;
-    //
-    //    //Ave.norm();
     //    Out.rgbtBlue = Ave.rgbtBlue;
     //    Out.rgbtGreen = Ave.rgbtGreen;
     //    Out.rgbtRed = Ave.rgbtRed;
@@ -602,29 +358,30 @@ public:
         //это было определение координат для кусочка
     }
 
-    void OutFile(size_t Hin, size_t Win, FILE* f,MATR& matrOrigin, FILE* fIn){
+    void OutFile(size_t Hin, size_t Win, FILE* f,MATR& matrOrigin){
         double minX, minY;
         double maxX, maxY;
 
         double Y1;
         double X1;
 
-        //double LansoshProg[6001];
-        //FileWithDes fL("LansoshProg.lans", "rb");//LansoshProg
-        //fread(LansoshProg, sizeof(LansoshProg), 1, fL.getF());
-
         int Nh = Hout / sampling;
         int Nw = Wout / sampling;
         int seek = offsetOut;
+        //fseek(f, seek, SEEK_SET);
+        
 
         for (int Yframe = 0; Yframe < Nh; ++Yframe) {
             for (int Xframe = 0; Xframe < Nw; ++Xframe) {//перебор всех фреймов, кроме крайних
+                seek = offsetOut + Yframe * sampling * (Wout * sizeof(RGBTRIPLE) + paddingOut) + Xframe * sampling * sizeof(RGBTRIPLE);//для каждого квадрата
+                fseek(f, seek, SEEK_SET);
+                seek = Wout * sizeof(RGBTRIPLE) + paddingOut - sampling * sizeof(RGBTRIPLE);
                 FrameCoordinate(Xframe, Yframe, minX, minY, maxX, maxY);
 
                 //отправка на чтение
                 int X=minX, Y=minY;
                 int startX = 0, startY = 0;
-                int h = sampling, w = sampling;
+                int h = maxY+1- minY+2*extend, w = maxX+1- minX+2*extend;
                 if (minX < 0) {
                     X = 0;
                     startX = -minX;
@@ -641,17 +398,14 @@ public:
                 if (maxY > Hin - 1) {
                     h -= (maxY - Hin);
                 }
-                matrOrigin.ReadFrame(fIn, X,  Y, startX, startY, h, w);
-
-                fseek(f, seek, SEEK_SET);
-                seek = Wout*sizeof(RGBTRIPLE) + paddingOut - sampling;
+                matrOrigin.ReadFrame(X,  Y, startX, startY, h, w);
 
                 for (int y = sampling * Yframe; y < sampling * (Yframe + 1); ++y) {
                     for (int x = sampling * Xframe; x < sampling * (Xframe + 1); ++x) {
                         Y1 = (x + dx) * sinA + (y + dy) * cosA;
                         X1 = (x + dx) * cosA - (y + dy) * sinA;
 
-                        if (X1 >= extend && X1 <= Win + extend - 1 && Y1 >= extend && Y1 <= Hin + extend - 1) {
+                        if (X1 >= 0 && X1 <= Win  - 1 && Y1 >= 0 && Y1 <= Hin - 1) {
                             X1 = X1 - X + extend;
                             Y1 = Y1 - Y + extend;
 
@@ -662,19 +416,23 @@ public:
                             lineOut[x - sampling * Xframe] = black;
                         }
                     }
-                    fwrite(lineOut.data(), Wout * 3, 1, f);//запись в bmp
+                    fwrite(lineOut.data(), sampling * sizeof(RGBTRIPLE), 1, f);//запись в bmp
                     fseek(f, seek, SEEK_CUR);
                 }
             }
         }
 
         if (Wout % sampling) {
+            seek = offsetOut + Nw * sampling * sizeof(RGBTRIPLE);
+            fseek(f, seek, SEEK_SET);
+            seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling) * sizeof(RGBTRIPLE);
+
             for (int Yframe = 0; Yframe < Nh; ++Yframe) {
                 FrameCoordinate(Nw, Yframe, minX, minY, maxX, maxY);
-
+                //отправка на чтение
                 int X = minX, Y = minY;
                 int startX = 0, startY = 0;
-                int h = sampling, w = sampling;
+                int h = maxY + 1 - minY, w = maxX + 1 - minX;
                 if (minX < 0) {
                     X = 0;
                     startX = -minX;
@@ -685,48 +443,47 @@ public:
                     startY = -minY;
                     h -= startY;
                 }
+                if (maxX > Win - 1) {
+                    w -= (maxX - Win);
+                }
                 if (maxY > Hin - 1) {
                     h -= (maxY - Hin);
                 }
-                w = Wout % sampling+extend;
-                matrOrigin.ReadFrame(fIn, X, Y, startX, startY, h, w);
-
-                seek = offsetOut + Nw * sampling * sizeof(RGBTRIPLE);
-
-                fseek(f, seek, SEEK_SET);
-                seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling);
-
+                matrOrigin.ReadFrame(X, Y, startX, startY, h, w);
+                
                 for (int y = sampling * Yframe; y < sampling * (Yframe + 1); ++y) {
-                    for (int x = sampling * Nw; x < sampling * (Nw + 1); ++x) {
+                    for (int x = sampling * Nw; x < sampling * Nw + (Wout % sampling); ++x) {
                         Y1 = (x + dx) * sinA + (y + dy) * cosA;
                         X1 = (x + dx) * cosA - (y + dy) * sinA;
 
-                        if (X1 >= extend && X1 <= Win + extend - 1 && Y1 >= extend && Y1 <= Hin + extend - 1) {
+                        if (X1 >= 0 && X1 <= Win - 1 && Y1 >= 0 && Y1 <= Hin - 1) {
                             X1 = X1 - X + extend;
                             Y1 = Y1 - Y + extend;
 
-
+                            //lineOut[x - sampling * Xframe] = matrOrigin.get(Y1, X1);
                             lineOut[x - sampling * Nw] = matrOrigin.getLansGlobFrame(Y1, X1);
                         }
                         else {
                             lineOut[x - sampling * Nw] = black;
                         }
                     }
-                    fwrite(lineOut.data(), Wout * 3, 1, f);//запись в bmp
+                    fwrite(lineOut.data(), (Wout % sampling) * sizeof(RGBTRIPLE), 1, f);//запись в bmp
                     fseek(f, seek, SEEK_CUR);
                 }
-
-
             }
         }
 
         if (Hout % sampling) {
+            seek = offsetOut + Nh * sampling * (sizeof(RGBTRIPLE) * Wout + paddingOut);
+            fseek(f, seek, SEEK_SET);
+            seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling) * sizeof(RGBTRIPLE);
+
             for (int Xframe = 0; Xframe < Nw; ++Xframe) {
                 FrameCoordinate(Xframe, Nh, minX, minY, maxX, maxY);
-
+                //отправка на чтение
                 int X = minX, Y = minY;
                 int startX = 0, startY = 0;
-                int h = sampling, w = sampling;
+                int h = maxY + 1 - minY, w = maxX + 1 - minX;
                 if (minX < 0) {
                     X = 0;
                     startX = -minX;
@@ -737,47 +494,90 @@ public:
                     startY = -minY;
                     h -= startY;
                 }
+                if (maxX > Win - 1) {
+                    w -= (maxX - Win);
+                }
                 if (maxY > Hin - 1) {
                     h -= (maxY - Hin);
                 }
-                w = Wout % sampling + extend;
-                matrOrigin.ReadFrame(fIn, X, Y, startX, startY, h, w);
+                matrOrigin.ReadFrame(X, Y, startX, startY, h, w);
 
-                seek = offsetOut + Nw * sampling * sizeof(RGBTRIPLE);
-
-                fseek(f, seek, SEEK_SET);
-                seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling);
-
-                for (int y = sampling * Nh; y < sampling * (Nh + 1); ++y) {
+                for (int y = sampling * Nh; y < sampling * Nh + (Hout % sampling); ++y) {
                     for (int x = sampling * Xframe; x < sampling * (Xframe + 1); ++x) {
                         Y1 = (x + dx) * sinA + (y + dy) * cosA;
                         X1 = (x + dx) * cosA - (y + dy) * sinA;
 
-                        if (X1 >= extend && X1 <= Win + extend - 1 && Y1 >= extend && Y1 <= Hin + extend - 1) {
+                        if (X1 >= 0 && X1 <= Win - 1 && Y1 >= 0 && Y1 <= Hin - 1) {
                             X1 = X1 - X + extend;
                             Y1 = Y1 - Y + extend;
 
-
+                            //lineOut[x - sampling * Xframe] = matrOrigin.get(Y1, X1);
                             lineOut[x - sampling * Xframe] = matrOrigin.getLansGlobFrame(Y1, X1);
                         }
                         else {
                             lineOut[x - sampling * Xframe] = black;
                         }
                     }
-                    fwrite(lineOut.data(), Wout * 3, 1, f);//запись в bmp
+                    fwrite(lineOut.data(), sampling * sizeof(RGBTRIPLE), 1, f);//запись в bmp
                     fseek(f, seek, SEEK_CUR);
                 }
             }
         }
 
-        seek = offsetOut + Wout * sizeof(RGBTRIPLE);
-        fseek(f, seek, SEEK_SET);
-        fwrite(&trash, 1, paddingOut, f);
-        seek = Wout * sizeof(RGBTRIPLE);
-        for (int i = 1; i < Hout; ++i) {
-            fseek(f, seek, SEEK_CUR);
-            fwrite(&trash, 1, paddingOut, f);
+        if ((Hout % sampling) && (Wout % sampling)) {
+            seek = offsetOut + Nh * sampling * (sizeof(RGBTRIPLE) * Wout + paddingOut) + Nw * sampling * sizeof(RGBTRIPLE);
+            fseek(f, seek, SEEK_SET);
+            seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling) * sizeof(RGBTRIPLE);
+
+            FrameCoordinate(Nw, Nh, minX, minY, maxX, maxY);
+
+            //отправка на чтение
+            int X = minX, Y = minY;
+            int startX = 0, startY = 0;
+            int h = maxY + 1 - minY, w = maxX + 1 - minX;
+            if (minX < 0) {
+                X = 0;
+                startX = -minX;
+                w -= startX;
+            }
+            if (minY < 0) {
+                Y = 0;
+                startY = -minY;
+                h -= startY;
+            }
+            if (maxX > Win - 1) {
+                w -= (maxX - Win);
+            }
+            if (maxY > Hin - 1) {
+                h -= (maxY - Hin);
+            }
+            matrOrigin.ReadFrame(X, Y, startX, startY, h, w);
+
+            for (int y = sampling * Nh; y < sampling * Nh + (Hout % sampling); ++y) {
+                for (int x = sampling * Nw; x < sampling * Nw + (Wout % sampling); ++x) {
+                    Y1 = (x + dx) * sinA + (y + dy) * cosA;
+                    X1 = (x + dx) * cosA - (y + dy) * sinA;
+
+                    if (X1 >= 0 && X1 <= Win - 1 && Y1 >= 0 && Y1 <= Hin - 1) {
+                        X1 = X1 - X + extend;
+                        Y1 = Y1 - Y + extend;
+
+                        //lineOut[x - sampling * Xframe] = matrOrigin.get(Y1, X1);
+                        lineOut[x - sampling * Nw] = matrOrigin.getLansGlobFrame(Y1, X1);
+                    }
+                    else {
+                        lineOut[x - sampling * Nw] = black;
+                    }
+                }
+                fwrite(lineOut.data(), (Wout% sampling) * sizeof(RGBTRIPLE), 1, f);//запись в bmp
+                fseek(f, seek, SEEK_CUR);
+            }
         }
+        
+        for (int i = 0; i < 1000; ++i) {
+            fwrite(&trash, 1, paddingOut, f);
+        }//забивка чёрным чтобы точно добить файл
+
     }
 };
 
@@ -802,9 +602,9 @@ int main(int argc, char* argv[]) {
 
     paddingIn = (4 - (bihIn.biWidth * 3) % 4) % 4;
 
-    int S1 = (sinA + cosA) * sampling;
+    int S1 = (sinA + cosA) * sampling;//размер фрагмнта для чтения без учёта расширения
 
-    MATR matr(S1, S1, bfhIn.bfOffBits, bihIn.biWidth, paddingIn);
+    MATR matr(S1, S1, bfhIn.bfOffBits, bihIn.biWidth, paddingIn, f1.getF());
     //matr.FillAll(f1.getF(), paddingIn);
 
     DoOutFile DoFile2(bihIn.biHeight, bihIn.biWidth, bihOut.biWidth, bihOut.biHeight, paddingOut);
@@ -824,18 +624,18 @@ int main(int argc, char* argv[]) {
     bfhOut.bfType = 19778;
     bfhOut.bfReserved1 = 0;
     bfhOut.bfReserved2 = 0;
-    bfhOut.bfOffBits = sizeof(bfhOut) + sizeof(bihOut);
+    bfhOut.bfOffBits = sizeof(bfhOut) + sizeof(bihOut);//а может чтото не так?
     bfhOut.bfSize = sizeof(bfhOut) + sizeof(bihOut) + bihOut.biSizeImage;
 
     DoFile2.setOffset(bfhOut.bfOffBits);
 
     fwrite(&bfhOut, sizeof(bfhOut), 1, f2.getF());
-    fwrite(&bihOut, sizeof(bihOut), 1, f2.getF());
+    fwrite(&bihOut, sizeof(bihOut), 1, f2.getF());//запись шапки
 
     cout << "\n\nразмер исходного изображения: " << bihIn.biHeight << "*" << bihIn.biWidth << endl;
     cout << "\n\nразмер итогового изображения: " << bihOut.biHeight << "*" << bihOut.biWidth << endl;
 
-    DoFile2.OutFile(bihIn.biHeight, bihIn.biWidth, f2.getF(), matr, f1.getF());
+    DoFile2.OutFile(bihIn.biHeight, bihIn.biWidth, f2.getF(), matr);
 
 
     return 0;
