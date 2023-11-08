@@ -8,13 +8,15 @@ using namespace std;
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-static const double angle = 0 * M_PI / 4;//в радианах
+int countP = 1;
+
+static const double angle = 2 * M_PI / 4;//в радианах
 
 static const double sinA = sin(angle);
 static const double cosA = cos(angle);
 
-static const char sIn[] = "in3.bmp";
-static const char sOut[] = "out3_0Pid4Lans111.bmp";
+static const char sIn[] = "in5.bmp";
+static const char sOut[] = "out5_2Pid4Lans10.bmp";
 
 uint32_t trash = 0;//для заполнения padding
 const int sampling = 10;//допустим 10
@@ -111,27 +113,27 @@ public:
     {
         size_t seek = offset + Y * (Worig * sizeof(RGBTRIPLE) + padding) + X * sizeof(RGBTRIPLE);
         fseek(fIn, seek, SEEK_SET);
-        seek = (Worig - w) * sizeof(RGBTRIPLE) + padding;
+        seek = (Worig - w) * sizeof(RGBTRIPLE) + padding;//почему то w<0
         for (int y = 0; y < h; ++y) {
             fread(matrIn[starty+y] + startx, w * 3, 1, fIn);
             fseek(fIn, seek, SEEK_CUR);
         }//читает правильно, тут всё ок
         //не ок, откуда то достаёт серые
 
-        for (int y = 0; y < Hmatr; ++y) {
-            for (int i = 0; i < startx; ++i) {//расширение в лево <--
-                matrIn[y][i] = matrIn[y][startx];
+        for (int y = 0; y < Hmatr+2*extend; ++y) {//для всех строк расширенной матрицы
+            for (int i = 0; i < startx; ++i) {//расширение в лево <--// от 0 до начала чтения
+                matrIn[y][i] = matrIn[y][startx];//так мы вроде передаём байты, а не массив
             }
-            for (int i = startx+w; i < Wmatr; ++i) {//расширение в право -->
+            for (int i = startx+w; i < Wmatr+2*extend; ++i) {//расширение в право -->//от конца чтения до конца строки
                 matrIn[y][i] = matrIn[y][startx+w-1];
             }
         }
-        for (int x = 0; x < Wmatr; ++x) {
-            for (int i = 0; i < starty; ++i) {//расширение в низ V
-                matrIn[x][i] = matrIn[x][startx];
+        for (int x = 0; x < Wmatr + 2 * extend; ++x) {//для всех столбцов расширенной матрицы
+            for (int i = 0; i < starty; ++i) {//расширение в низ V//от 0 до начала чтения
+                matrIn[i][x] = matrIn[starty][x];
             }
-            for (int i = starty + h; i < Hmatr; ++i) {//расширение в верх ^
-                matrIn[x][i] = matrIn[x][starty + h - 1];
+            for (int i = starty + h; i < Hmatr + 2 * extend; ++i) {//расширение в верх ^//от конца чтения до конца столбца
+                matrIn[i][x] = matrIn[starty + h - 1][x];
             }
         }
 
@@ -189,9 +191,9 @@ public:
 
                 kj = LansoshConst[kjm] * (1 - kjd) + LansoshConst[kjm + 1] * (kjd);
 
-                Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
-                Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
-                Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
+                Ave.rgbtBlue += ki * kj * matrIn[j + Y0 ][i + X0 ].rgbtBlue;
+                Ave.rgbtGreen += ki * kj * matrIn[j + Y0 ][i + X0 ].rgbtGreen;
+                Ave.rgbtRed += ki * kj * matrIn[j + Y0 ][i + X0].rgbtRed;
             }
         }
 
@@ -202,56 +204,6 @@ public:
 
         return Out;
     }
-
-    //RGBTRIPLE getLansGlob(double Y1, double X1) {//,,,
-
-    //    PIX Ave;
-    //    Ave.clc();
-    //    RGBTRIPLE Out;
-    //
-    //    size_t X0, Y0;
-    //    X0 = X1;//округление вниз//целая часть
-    //    Y0 = Y1;
-    //
-    //    double x = X1 - X0;
-    //    double y = Y1 - Y0;
-    //
-    //    int a = 3;
-    //
-    //    double ki = 1;
-    //    double kj = 1;
-    //    int kim;
-    //    int kjm;
-    //    double kid;
-    //    double kjd;
-    //
-    //    for (int i = -2; i < 4; ++i)
-    //    {
-    //        kim = (x - i) * 1000 + 3000;
-    //        kid = (x - i) * 1000 + 3000 - kim;
-    //
-    //        ki = LansoshConst[kim] * (1 - kid) + LansoshConst[kim + 1] * (kid);
-    //
-    //        for (int j = -2; j < 4; ++j)
-    //        {
-    //            kjm = (y - j) * 1000 + 3000;
-    //            kjd = (y - j) * 1000 + 3000 - kjm;
-    //
-    //            kj = LansoshConst[kjm] * (1 - kjd) + LansoshConst[kjm + 1] * (kjd);
-    //
-    //            Ave.rgbtBlue += ki * kj * matrIn[j + Y0][i + X0].rgbtBlue;
-    //            Ave.rgbtGreen += ki * kj * matrIn[j + Y0][i + X0].rgbtGreen;
-    //            Ave.rgbtRed += ki * kj * matrIn[j + Y0][i + X0].rgbtRed;
-    //        }
-    //    }
-    //
-    //    Ave.norm();
-    //    Out.rgbtBlue = Ave.rgbtBlue;
-    //    Out.rgbtGreen = Ave.rgbtGreen;
-    //    Out.rgbtRed = Ave.rgbtRed;
-    //
-    //    return Out;
-    //}
 
     RGBTRIPLE** getM() {
         return matrIn;
@@ -358,6 +310,11 @@ public:
         //это было определение координат для кусочка
     }
 
+    void renderSample(int Yframe, int Xframe, int seek) {
+        seek = offsetOut + Yframe * sampling * (Wout * sizeof(RGBTRIPLE) + paddingOut) + Xframe * sampling * sizeof(RGBTRIPLE);
+
+    }
+
     void OutFile(size_t Hin, size_t Win, FILE* f,MATR& matrOrigin){
         double minX, minY;
         double maxX, maxY;
@@ -376,44 +333,56 @@ public:
                 seek = offsetOut + Yframe * sampling * (Wout * sizeof(RGBTRIPLE) + paddingOut) + Xframe * sampling * sizeof(RGBTRIPLE);//для каждого квадрата
                 fseek(f, seek, SEEK_SET);
                 seek = Wout * sizeof(RGBTRIPLE) + paddingOut - sampling * sizeof(RGBTRIPLE);
-                FrameCoordinate(Xframe, Yframe, minX, minY, maxX, maxY);
+                FrameCoordinate(Xframe, Yframe, minX, minY, maxX, maxY);//выдаёт нормальный, ожидаемый результат без учёта расширения
 
                 //отправка на чтение
-                int X=minX, Y=minY;
+                int X=minX-extend, Y=minY-extend;//-extend повреждает выходной файл
                 int startX = 0, startY = 0;
                 int h = maxY+1- minY+2*extend, w = maxX+1- minX+2*extend;
-                if (minX < 0) {
+                if (minX < extend) {
                     X = 0;
-                    startX = -minX;
+                    startX = abs(minX)+extend;
                     w -= startX;
+
+                    if (startX<0 || startX>w) {
+                        cout << "что-то идёт не так...";
+                        startX = 0;
+                    }
                 }
-                if (minY < 0) {
+                if (minY < extend) {
                     Y = 0;
-                    startY = -minY;
+                    startY = abs(minY) + extend;
                     h -= startY;
+
+                    if (startY<0 || startY>h) {
+                        cout << "что-то идёт не так...";
+                        startY = 0;
+                    }
                 }
-                if (maxX > Win-1) {
-                    w -= (maxX-Win);
+                if (maxX + extend> Win-1) {//maxX>>Win изза этого падает
+                    w -= abs(maxX + extend - (Win-1));
                 }
-                if (maxY > Hin - 1) {
-                    h -= (maxY - Hin);
+                if (maxY + extend> Hin - 1) {
+                    h -= abs(maxY + extend - (Hin-1));
                 }
-                matrOrigin.ReadFrame(X,  Y, startX, startY, h, w);
+                matrOrigin.ReadFrame(X,  Y, startX, startY, h, w);//получает нормальные данные, после добавления -extend в 332 строку
 
                 for (int y = sampling * Yframe; y < sampling * (Yframe + 1); ++y) {
                     for (int x = sampling * Xframe; x < sampling * (Xframe + 1); ++x) {
                         Y1 = (x + dx) * sinA + (y + dy) * cosA;
                         X1 = (x + dx) * cosA - (y + dy) * sinA;
 
-                        if (X1 >= 0 && X1 <= Win  - 1 && Y1 >= 0 && Y1 <= Hin - 1) {
-                            X1 = X1 - X + extend;
-                            Y1 = Y1 - Y + extend;
+                        if (X1 >= 0 && X1 <= Win  - 1 && Y1 >= 0 && Y1 <= Hin - 1) {//а почему упало на y=8, когда до этого должно было быть x=8?
+                            X1 = X1 - minX + extend;
+                            Y1 = Y1 - minY + extend;
 
                             //lineOut[x - sampling * Xframe] = matrOrigin.get(Y1, X1);
                             lineOut[x - sampling * Xframe] = matrOrigin.getLansGlobFrame(Y1, X1);
+                            //countP++;
                         }
                         else {
                             lineOut[x - sampling * Xframe] = black;
+                            //countP++;
                         }
                     }
                     fwrite(lineOut.data(), sampling * sizeof(RGBTRIPLE), 1, f);//запись в bmp
@@ -423,31 +392,41 @@ public:
         }
 
         if (Wout % sampling) {
-            seek = offsetOut + Nw * sampling * sizeof(RGBTRIPLE);
-            fseek(f, seek, SEEK_SET);
-            seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling) * sizeof(RGBTRIPLE);
-
             for (int Yframe = 0; Yframe < Nh; ++Yframe) {
+                seek = offsetOut + Nw * sampling * sizeof(RGBTRIPLE) + Yframe * sampling * (sizeof(RGBTRIPLE) * Wout + paddingOut);
+                fseek(f, seek, SEEK_SET);
+                seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling) * sizeof(RGBTRIPLE);
+
                 FrameCoordinate(Nw, Yframe, minX, minY, maxX, maxY);
                 //отправка на чтение
-                int X = minX, Y = minY;
+                int X = minX - extend, Y = minY - extend;//-extend повреждает выходной файл
                 int startX = 0, startY = 0;
-                int h = maxY + 1 - minY, w = maxX + 1 - minX;
-                if (minX < 0) {
+                int h = maxY + 1 - minY + 2 * extend, w = maxX + 1 - minX + 2 * extend;
+                if (minX < extend) {
                     X = 0;
-                    startX = -minX;
+                    startX = abs(minX) + extend;
                     w -= startX;
+
+                    if (startX<0 || startX>w) {
+                        cout << "что-то идёт не так...";
+                        startX = 0;
+                    }
                 }
-                if (minY < 0) {
+                if (minY < extend) {
                     Y = 0;
-                    startY = -minY;
+                    startY = abs(minY) + extend;
                     h -= startY;
+
+                    if (startY<0 || startY>h) {
+                        cout << "что-то идёт не так...";
+                        startY = 0;
+                    }
                 }
-                if (maxX > Win - 1) {
-                    w -= (maxX - Win);
+                if (maxX + extend > Win - 1) {
+                    w -= abs(maxX + extend - (Win - 1));
                 }
-                if (maxY > Hin - 1) {
-                    h -= (maxY - Hin);
+                if (maxY + extend > Hin - 1) {
+                    h -= abs(maxY + extend - (Hin - 1));
                 }
                 matrOrigin.ReadFrame(X, Y, startX, startY, h, w);
                 
@@ -457,8 +436,8 @@ public:
                         X1 = (x + dx) * cosA - (y + dy) * sinA;
 
                         if (X1 >= 0 && X1 <= Win - 1 && Y1 >= 0 && Y1 <= Hin - 1) {
-                            X1 = X1 - X + extend;
-                            Y1 = Y1 - Y + extend;
+                            X1 = X1 - minX + extend;
+                            Y1 = Y1 - minY + extend;
 
                             //lineOut[x - sampling * Xframe] = matrOrigin.get(Y1, X1);
                             lineOut[x - sampling * Nw] = matrOrigin.getLansGlobFrame(Y1, X1);
@@ -474,31 +453,41 @@ public:
         }
 
         if (Hout % sampling) {
-            seek = offsetOut + Nh * sampling * (sizeof(RGBTRIPLE) * Wout + paddingOut);
-            fseek(f, seek, SEEK_SET);
-            seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling) * sizeof(RGBTRIPLE);
-
             for (int Xframe = 0; Xframe < Nw; ++Xframe) {
+                seek = offsetOut + Nh * sampling * (sizeof(RGBTRIPLE) * Wout + paddingOut)+ Xframe * sampling * sizeof(RGBTRIPLE);
+                fseek(f, seek, SEEK_SET);
+                seek = Wout * sizeof(RGBTRIPLE) + paddingOut - sampling * sizeof(RGBTRIPLE);
+
                 FrameCoordinate(Xframe, Nh, minX, minY, maxX, maxY);
                 //отправка на чтение
-                int X = minX, Y = minY;
+                int X = minX - extend, Y = minY - extend;//-extend повреждает выходной файл
                 int startX = 0, startY = 0;
-                int h = maxY + 1 - minY, w = maxX + 1 - minX;
-                if (minX < 0) {
+                int h = maxY + 1 - minY + 2 * extend, w = maxX + 1 - minX + 2 * extend;
+                if (minX < extend) {
                     X = 0;
-                    startX = -minX;
+                    startX = abs(minX) + extend;
                     w -= startX;
+
+                    if (startX<0 || startX>w) {
+                        startX = 0;
+                        countP = 1;
+                    }
                 }
-                if (minY < 0) {
+                if (minY < extend) {
                     Y = 0;
-                    startY = -minY;
+                    startY = abs(minY) + extend;
                     h -= startY;
+
+                    if (startY<0 || startY>h) {
+                        countP = 1;
+                        startY = 0;
+                    }
                 }
-                if (maxX > Win - 1) {
-                    w -= (maxX - Win);
+                if (maxX + extend > Win - 1) {
+                    w -= abs(maxX + extend - (Win - 1));
                 }
-                if (maxY > Hin - 1) {
-                    h -= (maxY - Hin);
+                if (maxY + extend > Hin - 1) {
+                    h -= abs(maxY + extend - (Hin - 1));
                 }
                 matrOrigin.ReadFrame(X, Y, startX, startY, h, w);
 
@@ -508,11 +497,15 @@ public:
                         X1 = (x + dx) * cosA - (y + dy) * sinA;
 
                         if (X1 >= 0 && X1 <= Win - 1 && Y1 >= 0 && Y1 <= Hin - 1) {
-                            X1 = X1 - X + extend;
-                            Y1 = Y1 - Y + extend;
+                            X1 = X1 - minX + extend;
+                            Y1 = Y1 - minY + extend;
 
                             //lineOut[x - sampling * Xframe] = matrOrigin.get(Y1, X1);
                             lineOut[x - sampling * Xframe] = matrOrigin.getLansGlobFrame(Y1, X1);
+                            if (countP) {
+                                cout << "что-то идёт не так...";
+                                countP = 0;
+                            }
                         }
                         else {
                             lineOut[x - sampling * Xframe] = black;
@@ -530,26 +523,35 @@ public:
             seek = Wout * sizeof(RGBTRIPLE) + paddingOut - (Wout % sampling) * sizeof(RGBTRIPLE);
 
             FrameCoordinate(Nw, Nh, minX, minY, maxX, maxY);
-
             //отправка на чтение
-            int X = minX, Y = minY;
+            int X = minX - extend, Y = minY - extend;//-extend повреждает выходной файл
             int startX = 0, startY = 0;
-            int h = maxY + 1 - minY, w = maxX + 1 - minX;
-            if (minX < 0) {
+            int h = maxY + 1 - minY + 2 * extend, w = maxX + 1 - minX + 2 * extend;
+            if (minX < extend) {
                 X = 0;
-                startX = -minX;
+                startX = abs(minX) + extend;
                 w -= startX;
+
+                if (startX<0 || startX>w) {
+                    cout << "что-то идёт не так...";
+                    startX = 0;
+                }
             }
-            if (minY < 0) {
+            if (minY < extend) {
                 Y = 0;
-                startY = -minY;
+                startY = abs(minY) + extend;
                 h -= startY;
+
+                if (startY<0 || startY>h) {
+                    cout << "что-то идёт не так...";
+                    startY = 0;
+                }
             }
-            if (maxX > Win - 1) {
-                w -= (maxX - Win);
+            if (maxX + extend > Win - 1) {
+                w -= abs(maxX + extend - (Win - 1));
             }
-            if (maxY > Hin - 1) {
-                h -= (maxY - Hin);
+            if (maxY + extend > Hin - 1) {
+                h -= abs(maxY + extend - (Hin - 1));
             }
             matrOrigin.ReadFrame(X, Y, startX, startY, h, w);
 
@@ -559,8 +561,8 @@ public:
                     X1 = (x + dx) * cosA - (y + dy) * sinA;
 
                     if (X1 >= 0 && X1 <= Win - 1 && Y1 >= 0 && Y1 <= Hin - 1) {
-                        X1 = X1 - X + extend;
-                        Y1 = Y1 - Y + extend;
+                        X1 = X1 - minX + extend;
+                        Y1 = Y1 - minY + extend;
 
                         //lineOut[x - sampling * Xframe] = matrOrigin.get(Y1, X1);
                         lineOut[x - sampling * Nw] = matrOrigin.getLansGlobFrame(Y1, X1);
@@ -574,7 +576,7 @@ public:
             }
         }
         
-        for (int i = 0; i < 1000; ++i) {
+        for (int i = 0; i < 3000; ++i) {
             fwrite(&trash, 1, paddingOut, f);
         }//забивка чёрным чтобы точно добить файл
 
@@ -636,6 +638,8 @@ int main(int argc, char* argv[]) {
     cout << "\n\nразмер итогового изображения: " << bihOut.biHeight << "*" << bihOut.biWidth << endl;
 
     DoFile2.OutFile(bihIn.biHeight, bihIn.biWidth, f2.getF(), matr);
+
+    //cout << "пишет столько то пикселей:" << countP;
 
 
     return 0;
